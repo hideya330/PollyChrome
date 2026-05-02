@@ -69,3 +69,6 @@ __pycache__/
 .DS_Store
 .vscode/
 .idea/
+
+# 5. ローカルでのテスト用スクリプトや出力ファイル
+local_files/

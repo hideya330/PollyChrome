@@ -31,6 +31,12 @@ resource "aws_iam_role_policy_attachment" "lambda_polly_access" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonPollyReadOnlyAccess"
 }
 
+# AWS Translateの読み取り専用権限（翻訳用）
+resource "aws_iam_role_policy_attachment" "lambda_translate_access" {
+  role       = aws_iam_role.lambda_exec_role.name
+  policy_arn = "arn:aws:iam::aws:policy/TranslateReadOnly"
+}
+
 # ==========================================
 # Lambda Function
 # ==========================================

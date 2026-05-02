@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>PollyChrome 設定</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 400px; }
+    .setting { margin-bottom: 20px; }
+    label { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>PollyChrome 設定</h2>
+  <div class="setting">
+    <label><input type="checkbox" id="enable_floating_button"> テキスト選択時に「読み上げ」ボタンを表示する</label>
+  </div>
+  <div class="setting">
+    <label><input type="checkbox" id="enable_audio"> 音声を再生する</label><br>
+    <label style="display: inline-block; margin-top: 5px;"><input type="checkbox" id="enable_subtitle"> 翻訳字幕を表示する（日本語以外の場合）</label>
+  </div>
+  <div class="setting">
+    <label>日本語の音声タイプ: </label><br>
+    <select id="voice_type_ja" style="width: 100%; margin-top: 5px; padding: 5px;">
+      <option value="Mizuki">Mizuki (女性 - 標準的で落ち着いた声)</option>
+      <option value="Takumi">Takumi (男性 - 標準的で落ち着いた声)</option>
+    </select>
+  </div>
+  <div class="setting">
+    <label>英語の音声タイプ: </label><br>
+    <select id="voice_type_en" style="width: 100%; margin-top: 5px; padding: 5px;">
+      <optgroup label="英語 (English, US)">
+        <option value="Joanna">Joanna (女性 - プロフェッショナルなアナウンサー風)</option>
+        <option value="Salli">Salli (女性 - 明るくフレンドリー)</option>
+        <option value="Kendra">Kendra (女性 - 落ち着いたナレーション風)</option>
+        <option value="Ivy">Ivy (女性 - 子供らしい元気な声)</option>
+        <option value="Matthew">Matthew (男性 - ニュースキャスター風の落ち着いた声)</option>
+        <option value="Joey">Joey (男性 - エネルギッシュで明るい)</option>
+        <option value="Justin">Justin (男性 - 若々しく元気な声)</option>
+      </optgroup>
+      <optgroup label="英語 (English, UK)">
+        <option value="Amy">Amy (女性 - 明るいイギリス英語)</option>
+        <option value="Emma">Emma (女性 - 落ち着いたイギリス英語)</option>
+        <option value="Brian">Brian (男性 - 標準的なイギリス英語)</option>
+      </optgroup>
+    </select>
+  </div>
+  <div class="setting">
+    <label>読み上げ速度: <span id="speed_value">1.0</span>x</label><br>
+    <input type="range" id="speech_rate" min="0.5" max="2.0" step="0.1" value="1.0" style="width: 100%;">
+  </div>
+  <div class="setting" style="font-size: 14px;">
+    <a href="#" id="open_shortcuts" style="color: #0056b3; text-decoration: none;">⌨️ ショートカットキーを設定・変更する</a>
+  </div>
+  <button id="save">設定を保存</button>
+  <span id="status" style="color: green; margin-left: 10px;"></span>
+  <script src="options.js"></script>
+</body>
+</html>

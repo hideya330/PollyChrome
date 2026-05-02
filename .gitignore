@@ -1,3 +1,6 @@
+# ==========================================
+# terraform関連の除外設定
+# ==========================================
 # Local .terraform directories
 .terraform/
 
@@ -42,3 +45,27 @@ terraform.rc
 # Optional: ignore plan files saved before destroying Terraform configuration
 # Uncomment the line below if you want to ignore planout files.
 # planout
+
+# ==========================================
+# プロジェクト固有の除外設定 (追加分)
+# ==========================================
+
+# 1. Chrome拡張機能のシークレット設定ファイル【超重要】
+# API URLとAPIキーを含むため、絶対にコミットしない
+extension/config.js
+
+# 2. Lambdaのデプロイ用パッケージ
+# Terraformが自動生成するzipファイルは管理不要
+*.zip
+terraform/lambda.zip
+
+# 3. Pythonのキャッシュファイル
+# Lambda関数（Python）を実行・テストした際に生成されるゴミファイル
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 4. OSやエディタの一時ファイル（推奨）
+.DS_Store
+.vscode/
+.idea/

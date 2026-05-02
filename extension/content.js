@@ -4,12 +4,12 @@ let isExtensionValid = true; // 拡張機能が有効かどうかを追跡する
 
 // 初回読み込み時に設定を取得してローカル変数に保持（毎回取得するとエラーや遅延の原因になるため）
 try {
-  chrome.storage.sync.get({ enable_floating_button: true }, (items) => {
+  chrome.storage.local.get({ enable_floating_button: true }, (items) => {
     if (!chrome.runtime.lastError) isFloatingButtonEnabled = items.enable_floating_button;
   });
   
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'sync' && changes.enable_floating_button) {
+    if (area === 'local' && changes.enable_floating_button) {
       isFloatingButtonEnabled = changes.enable_floating_button.newValue;
     }
   });
@@ -64,7 +64,7 @@ function createButton() {
             if (chrome.runtime.lastError) {
               tooltip.textContent = 'エラーが発生しました';
             } else if (response && response.translated_text) {
-              let html = `<div>${response.translated_text}</div>`;
+              let html = `<div>${response.translated_text.replace(/。/g, '。<br>')}</div>`;
               if (response.word_meanings && response.word_meanings.length > 0) {
                 html += `<hr style="margin:5px 0; border:none; border-top:1px solid #ddd;"><div style="font-size:11px; color:#555;">${response.word_meanings.join('<br>')}</div>`;
               }

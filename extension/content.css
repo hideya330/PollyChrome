@@ -34,7 +34,11 @@
   font-size: 13px;
   font-family: sans-serif;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  max-width: 250px;
+  width: 750px;
+  max-width: 90vw;
+  max-height: 250px;
+  overflow-y: auto;
   word-wrap: break-word;
+  text-align: left;
   border: 1px solid #ddd;
 }

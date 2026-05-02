@@ -39,6 +39,7 @@ chrome.commands.onCommand.addListener((command) => {
                 } else if (cmd === "replay_audio") {
                   // 再生中や停止中に強制リプレイする場合
                   window.pollychromeAudio.currentTime = 0;
+                  if (window.pollychromeAudio.defaultPlaybackRate) window.pollychromeAudio.playbackRate = window.pollychromeAudio.defaultPlaybackRate;
                   window.pollychromeAudio.play();
                 } else if (cmd === "stop_audio") {
                   window.pollychromeAudio.pause();
@@ -63,10 +64,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+// JSONファイルからデフォルトのストップワードを取得する
+async function getDefaultStopWords() {
+  const response = await fetch(chrome.runtime.getURL('stop_words.json'));
+  const stopWordsArray = await response.json();
+  return stopWordsArray.join(", ");
+}
+
 // APIを呼び出して音声を再生する関数
 async function speakText(text, tabId) {
   try {
-    const settings = await chrome.storage.sync.get({ voice_type_ja: 'Mizuki', voice_type_en: 'Joanna', speech_rate: '1.0', enable_audio: true, enable_subtitle: true });
+    const defaultStopWords = await getDefaultStopWords();
+    const settings = await chrome.storage.local.get({ voice_type_ja: 'Mizuki', voice_type_en: 'Joanna', speech_rate: '1.0', enable_audio: true, enable_subtitle: true, stop_words: defaultStopWords });
 
     // 音声も字幕も無効な場合は、APIを呼び出さずに終了
     if (!settings.enable_audio && !settings.enable_subtitle) {
@@ -79,7 +88,7 @@ async function speakText(text, tabId) {
         'Content-Type': 'application/json',
         'x-api-key': CONFIG.API_KEY
       },
-      body: JSON.stringify({ text: text, voice_type_ja: settings.voice_type_ja, voice_type_en: settings.voice_type_en })
+      body: JSON.stringify({ text: text, voice_type_ja: settings.voice_type_ja, voice_type_en: settings.voice_type_en, stop_words: settings.stop_words })
     });
 
     if (!response.ok) {
@@ -102,9 +111,12 @@ async function speakText(text, tabId) {
           let audio = null;
           if (enableAudio && base64Audio) {
             audio = new Audio("data:audio/mp3;base64," + base64Audio);
+            audio.defaultPlaybackRate = rate; // デフォルトの速度として記憶させる
             audio.playbackRate = rate;
             window.pollychromeAudio = audio;
-            audio.play();
+            audio.play().then(() => {
+              audio.playbackRate = rate; // Chromeの仕様対策: 再生開始直後に再度上書きする
+            }).catch(() => {});
           }
 
           // 字幕パネルを作成（または取得）
@@ -113,7 +125,7 @@ async function speakText(text, tabId) {
             if (!subtitlePanel) {
               subtitlePanel = document.createElement('div');
               subtitlePanel.id = 'pollychrome-subtitle';
-              subtitlePanel.style.cssText = 'position:fixed; bottom:70px; left:50%; transform:translateX(-50%); z-index:2147483647; background:rgba(0,0,0,0.8); color:#fff; padding:15px 20px; border-radius:8px; font-size:16px; font-family:sans-serif; line-height:1.5; max-width:80%; text-align:center; box-shadow:0 4px 6px rgba(0,0,0,0.3); pointer-events:none;';
+              subtitlePanel.style.cssText = 'position:fixed; bottom:70px; left:50%; transform:translateX(-50%); z-index:2147483647; background:rgba(0,0,0,0.8); color:#fff; padding:15px 20px; border-radius:8px; font-size:32px; font-family:sans-serif; line-height:1.5; width:90vw; max-width:95vw; text-align:left; box-shadow:0 4px 6px rgba(0,0,0,0.3); pointer-events:none; white-space:pre-wrap;';
               document.body.appendChild(subtitlePanel);
 
               // 選択解除で字幕を消す
@@ -125,7 +137,7 @@ async function speakText(text, tabId) {
                 }
               });
             }
-            subtitlePanel.textContent = translatedText;
+            subtitlePanel.textContent = translatedText.replace(/。/g, '。\n');
             subtitlePanel.style.display = 'block';
           } else if (subtitlePanel) {
             subtitlePanel.style.display = 'none';
@@ -168,6 +180,7 @@ async function speakText(text, tabId) {
               replayBtn.addEventListener('click', () => {
                 if (audio) {
                   audio.currentTime = 0;
+                  audio.playbackRate = rate; // 再再生時にも速度を適用
                   audio.play();
                 }
                 replayBtn.style.display = 'none';
@@ -205,10 +218,13 @@ async function speakText(text, tabId) {
 // 翻訳のみを行う関数（音声合成をスキップ）
 async function translateOnly(text) {
   try {
+    const defaultStopWords = await getDefaultStopWords();
+    const settings = await chrome.storage.local.get({ stop_words: defaultStopWords });
+
     const response = await fetch(CONFIG.API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': CONFIG.API_KEY },
-      body: JSON.stringify({ text: text, translate_only: true })
+      body: JSON.stringify({ text: text, translate_only: true, stop_words: settings.stop_words })
     });
     if (!response.ok) throw new Error(`API Request failed with status ${response.status}`);
     return await response.json();

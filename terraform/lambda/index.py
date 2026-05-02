@@ -40,15 +40,25 @@ def lambda_handler(event, context):
                 
                 # 英単語ごとの意味も取得する
                 word_meanings = []
+                
+                # 除外する簡単な英単語（ストップワード）のリスト
+                custom_stop_words_str = body.get('stop_words')
+                stop_words = set()
+                if custom_stop_words_str:
+                    # フロントエンドから送られたストップワードを解析
+                    stop_words = set(re.findall(r'\b[a-zA-Z]+\b', custom_stop_words_str.lower()))
                 words = re.findall(r'\b[a-zA-Z]{2,}\b', text) # 2文字以上の英単語を抽出
                 unique_words = []
                 for w in words:
                     wl = w.lower()
-                    if wl not in unique_words:
+                    if wl not in unique_words and wl not in stop_words:
                         unique_words.append(wl)
                         
-                # 単語が複数ある場合（最大20単語まで）まとめて翻訳
-                if 1 < len(unique_words) <= 20:
+                # 長文の場合は、抽出した単語を最初の20個までに制限
+                unique_words = unique_words[:20]
+
+                # 単語の意味をまとめて翻訳
+                if len(unique_words) > 0:
                     words_text = "\n".join(unique_words)
                     words_response = translate_client.translate_text(
                         Text=words_text,

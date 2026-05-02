@@ -64,11 +64,23 @@ function createButton() {
             if (chrome.runtime.lastError) {
               tooltip.textContent = 'エラーが発生しました';
             } else if (response && response.translated_text) {
-              let html = `<div>${response.translated_text.replace(/。/g, '。<br>')}</div>`;
+              tooltip.textContent = ''; // 中身をクリア
+              
+              const transDiv = document.createElement('div');
+              transDiv.style.whiteSpace = 'pre-wrap';
+              transDiv.textContent = response.translated_text.replace(/。/g, '。\n');
+              tooltip.appendChild(transDiv);
+              
               if (response.word_meanings && response.word_meanings.length > 0) {
-                html += `<hr style="margin:5px 0; border:none; border-top:1px solid #ddd;"><div style="font-size:11px; color:#555;">${response.word_meanings.join('<br>')}</div>`;
+                const hr = document.createElement('hr');
+                hr.style.cssText = 'margin:5px 0; border:none; border-top:1px solid #ddd;';
+                tooltip.appendChild(hr);
+                
+                const meaningsDiv = document.createElement('div');
+                meaningsDiv.style.cssText = 'font-size:11px; color:#555; white-space:pre-wrap;';
+                meaningsDiv.textContent = response.word_meanings.join('\n');
+                tooltip.appendChild(meaningsDiv);
               }
-              tooltip.innerHTML = html;
             } else {
               tooltip.textContent = '翻訳できませんでした';
             }

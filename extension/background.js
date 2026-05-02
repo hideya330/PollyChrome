@@ -116,7 +116,10 @@ async function speakText(text, tabId) {
             window.pollychromeAudio = audio;
             audio.play().then(() => {
               audio.playbackRate = rate; // Chromeの仕様対策: 再生開始直後に再度上書きする
-            }).catch(() => {});
+            }).catch((err) => {
+              console.error("PollyChrome Audio Play Error:", err);
+              alert("🔊 Chromeのセキュリティにより音声の再生がブロックされました！\nウェブページのどこか適当な場所を一度クリックしてから、再度読み上げを実行してください。");
+            });
           }
 
           // 字幕パネルを作成（または取得）
@@ -125,7 +128,7 @@ async function speakText(text, tabId) {
             if (!subtitlePanel) {
               subtitlePanel = document.createElement('div');
               subtitlePanel.id = 'pollychrome-subtitle';
-              subtitlePanel.style.cssText = 'position:fixed; bottom:70px; left:50%; transform:translateX(-50%); z-index:2147483647; background:rgba(0,0,0,0.8); color:#fff; padding:15px 20px; border-radius:8px; font-size:32px; font-family:sans-serif; line-height:1.5; width:90vw; max-width:95vw; text-align:left; box-shadow:0 4px 6px rgba(0,0,0,0.3); pointer-events:none; white-space:pre-wrap;';
+              subtitlePanel.style.cssText = 'position:fixed; bottom:70px; left:50%; transform:translateX(-50%); z-index:2147483647; background:rgba(0,0,0,0.8); color:#fff; padding:15px 20px; border-radius:8px; font-size:32px; font-family:sans-serif; line-height:1.5; width:90vw; max-width:95vw; max-height:50vh; overflow-y:auto; text-align:left; box-shadow:0 4px 6px rgba(0,0,0,0.3); white-space:pre-wrap;';
               document.body.appendChild(subtitlePanel);
 
               // 選択解除で字幕を消す
@@ -153,7 +156,7 @@ async function speakText(text, tabId) {
               document.body.appendChild(ctrlPanel);
             }
             ctrlPanel.style.display = 'flex';
-            ctrlPanel.innerHTML = ''; // 中身をリセット
+            ctrlPanel.textContent = ''; // 中身をリセット
 
             const closeBtn = document.createElement('div');
             closeBtn.textContent = '✖ 閉じる';
@@ -168,8 +171,33 @@ async function speakText(text, tabId) {
               replayBtn.textContent = '🔄 もう一度再生';
               replayBtn.style.cssText = 'background:#5bc0de; color:#fff; padding:5px 10px; border-radius:3px; font-size:13px; font-family:sans-serif; cursor:pointer; user-select:none; display:none;';
 
+              const downloadBtn = document.createElement('div');
+              downloadBtn.textContent = '💾 保存';
+              downloadBtn.style.cssText = 'background:#5cb85c; color:#fff; padding:5px 10px; border-radius:3px; font-size:13px; font-family:sans-serif; cursor:pointer; user-select:none;';
+
               ctrlPanel.appendChild(stopBtn);
               ctrlPanel.appendChild(replayBtn);
+              ctrlPanel.appendChild(downloadBtn);
+
+              downloadBtn.addEventListener('click', () => {
+                // Base64をバイナリデータ(Blob)に変換して安全にダウンロードさせる
+                const byteCharacters = atob(base64Audio);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'audio/mp3' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `pollychrome_${new Date().getTime()}.mp3`; // 現在時刻を使ったファイル名
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              });
 
               stopBtn.addEventListener('click', () => {
                 if (audio) audio.pause();

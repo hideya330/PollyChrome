@@ -78,6 +78,13 @@ async function getDefaultStopWords() {
   return stopWordsArray.join(", ");
 }
 
+// JSONファイルからデフォルトのAWS用語を取得する
+async function getDefaultAwsTerms() {
+  const response = await fetch(chrome.runtime.getURL('aws_terms.json'));
+  const termsArray = await response.json();
+  return termsArray.join(", ");
+}
+
 // APIを呼び出して音声を再生する関数
 async function speakText(text, tabId) {
   try {
@@ -91,20 +98,22 @@ async function speakText(text, tabId) {
     }
 
     const defaultStopWords = await getDefaultStopWords();
-    const settings = await chrome.storage.local.get({ voice_type_ja: 'Mizuki', voice_type_en: 'Joanna', speech_rate: '1.0', enable_audio: true, enable_subtitle: true, enable_highlight: true, stop_words: defaultStopWords, usd_rate: 150 });
+    const defaultAwsTerms = await getDefaultAwsTerms();
+    const settings = await chrome.storage.local.get({ voice_type_ja: 'Mizuki', voice_type_en: 'Joanna', speech_rate: '1.0', enable_audio: true, enable_subtitle: true, enable_highlight: true, stop_words: defaultStopWords, aws_terms: defaultAwsTerms, usd_rate: 150 });
 
     // 音声も字幕も無効な場合は、APIを呼び出さずに終了
     if (!settings.enable_audio && !settings.enable_subtitle) {
       return;
     }
 
+    const combinedStopWords = (settings.stop_words || "") + ", " + (settings.aws_terms || "");
     const response = await fetch(CONFIG.API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': CONFIG.API_KEY
       },
-      body: JSON.stringify({ text: text, voice_type_ja: settings.voice_type_ja, voice_type_en: settings.voice_type_en, stop_words: settings.stop_words, enable_subtitle: settings.enable_subtitle, enable_highlight: settings.enable_highlight, usd_rate: settings.usd_rate })
+      body: JSON.stringify({ text: text, voice_type_ja: settings.voice_type_ja, voice_type_en: settings.voice_type_en, stop_words: combinedStopWords, enable_subtitle: settings.enable_subtitle, enable_highlight: settings.enable_highlight, usd_rate: settings.usd_rate })
     });
 
     if (!response.ok) {
@@ -328,12 +337,14 @@ async function translateOnly(text) {
     }
 
     const defaultStopWords = await getDefaultStopWords();
-    const settings = await chrome.storage.local.get({ stop_words: defaultStopWords, usd_rate: 150 });
+    const defaultAwsTerms = await getDefaultAwsTerms();
+    const settings = await chrome.storage.local.get({ stop_words: defaultStopWords, aws_terms: defaultAwsTerms, usd_rate: 150 });
 
+    const combinedStopWords = (settings.stop_words || "") + ", " + (settings.aws_terms || "");
     const response = await fetch(CONFIG.API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': CONFIG.API_KEY },
-      body: JSON.stringify({ text: text, translate_only: true, stop_words: settings.stop_words, usd_rate: settings.usd_rate })
+      body: JSON.stringify({ text: text, translate_only: true, stop_words: combinedStopWords, usd_rate: settings.usd_rate })
     });
     if (!response.ok) {
       if (response.status === 429) {

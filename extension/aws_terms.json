@@ -1,0 +1,14 @@
+[
+  "ACL", "ALB", "AMI", "API", "ARN", "AWS", "Amazon", "Amplify", "AppSync", "Athena",
+  "Aurora", "AZ", "Batch", "Beanstalk", "Bedrock", "CGW", "CLI", "Cloud9", "CloudDirectory", "CloudFormation",
+  "CloudFront", "CloudHSM", "CloudSearch", "CloudTrail", "CloudWatch", "CodeBuild", "CodeCommit", "CodeDeploy", "CodePipeline", "CodeStar",
+  "Cognito", "Comprehend", "Config", "Connect", "Corretto", "DataSync", "DirectConnect", "DocumentDB", "DX", "DynamoDB",
+  "EBS", "EC2", "ECR", "ECS", "EFS", "EIP", "EKS", "ElastiCache", "Elastic", "Elasticsearch",
+  "ELB", "EMR", "ENI", "EventBridge", "Fargate", "Forecast", "FSx", "Gateway", "Glacier", "Glue",
+  "GuardDuty", "IAM", "IGW", "Inspector", "IoT", "Kendra", "Keyspaces", "Kinesis", "KMS", "LakeFormation",
+  "Lambda", "Lex", "Lightsail", "Macie", "MQ", "MSK", "NAT", "Neptune", "NLB", "OpenSearch",
+  "OpsWorks", "Organizations", "Outposts", "Personalize", "Pinpoint", "Polly", "QuickSight", "RDS", "Redshift", "Rekognition",
+  "Route53", "S3", "SageMaker", "SecretsManager", "SecurityHub", "Serverless", "SES", "Shield", "Snowball", "SNS",
+  "SQS", "SSM", "StepFunctions", "STS", "Textract", "Timestream", "Transcribe", "Translate", "VGW", "VPC",
+  "WAF", "WorkDocs", "WorkMail", "WorkSpaces", "region"
+]

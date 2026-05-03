@@ -62,6 +62,16 @@ function createButton() {
     if (text && isExtensionValid) {
       tooltip.style.display = 'block';
       tooltip.textContent = '翻訳中...';
+      
+      // ツールチップが画面右側にはみ出す場合は、ボタンの左側に向かって広がるように調整
+      tooltip.style.left = '0';
+      tooltip.style.right = 'auto';
+      const rect = tooltip.getBoundingClientRect();
+      if (rect.right > window.innerWidth) {
+        tooltip.style.left = 'auto';
+        tooltip.style.right = '0';
+      }
+
       try {
         if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
           chrome.runtime.sendMessage({ action: "translate_text", text: text }, (response) => {
@@ -136,6 +146,10 @@ function removeButton() {
 }
 
 document.addEventListener('mouseup', (e) => {
+  // イベント発生時のマウス座標を取得しておく
+  const mouseX = e.pageX;
+  const mouseY = e.pageY;
+
   setTimeout(() => {
     if (!isExtensionValid) return; // 拡張機能が無効な場合は何もしない
 
@@ -147,9 +161,22 @@ document.addEventListener('mouseup', (e) => {
           floatingBtn = createButton();
           document.body.appendChild(floatingBtn);
         }
-        const range = selection.getRangeAt(0).getBoundingClientRect();
-        floatingBtn.style.top = `${window.scrollY + range.bottom + 5}px`;
-        floatingBtn.style.left = `${window.scrollX + range.left + (range.width / 2) - 40}px`;
+        let leftPos = mouseX + 10; // カーソルから少し右にずらす
+        let topPos = mouseY + 15;  // カーソルから少し下にずらす
+        
+        // ボタン群(約320px)が画面右側にはみ出さないように位置を調整
+        const estimatedBtnWidth = 320;
+        const maxLeftPos = window.scrollX + window.innerWidth - estimatedBtnWidth - 20;
+        
+        if (leftPos > maxLeftPos) {
+          leftPos = maxLeftPos;
+        }
+        if (leftPos < window.scrollX + 10) {
+          leftPos = window.scrollX + 10;
+        }
+
+        floatingBtn.style.top = `${topPos}px`;
+        floatingBtn.style.left = `${leftPos}px`;
       }
     } else {
       removeButton();

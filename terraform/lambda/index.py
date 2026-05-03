@@ -55,8 +55,8 @@ def lambda_handler(event, context):
                 stop_words = set()
                 if custom_stop_words_str:
                     # フロントエンドから送られたストップワードを解析
-                    stop_words = set(re.findall(r'\b[a-zA-Z]+\b', custom_stop_words_str.lower()))
-                words = re.findall(r'\b[a-zA-Z]{2,}\b', text) # 2文字以上の英単語を抽出
+                    stop_words = set(re.findall(r'\b[a-zA-Z0-9]+\b', custom_stop_words_str.lower()))
+                words = re.findall(r'\b[a-zA-Z0-9]{2,}\b', text) # 2文字以上の英単語(数字含む)を抽出
                 
                 # 活用形を考慮してストップワードか判定するヘルパー関数
                 def is_stop_word(w):

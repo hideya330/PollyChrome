@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>PollyChrome 設定</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; width: 450px; min-height: 700px; }
+    body { font-family: sans-serif; padding: 20px; width: 450px; min-height: 800px; }
     .setting { margin-bottom: 20px; }
     label { cursor: pointer; }
   </style>
@@ -60,6 +60,11 @@
     <label>辞書機能で除外する英単語（カンマまたはスペース区切り）:</label><br>
     <textarea id="stop_words" rows="4" style="width: 100%; margin-top: 5px; padding: 5px; font-family: monospace; font-size: 12px;"></textarea>
     <button id="reset_stop_words" type="button" style="margin-top: 5px; font-size: 12px; cursor: pointer;">デフォルトリストを読み込む</button>
+  </div>
+  <div class="setting">
+    <label>翻訳から除外するAWS用語・専門用語（カンマまたはスペース区切り）:</label><br>
+    <textarea id="aws_terms" rows="2" style="width: 100%; margin-top: 5px; padding: 5px; font-family: monospace; font-size: 12px;"></textarea>
+    <button id="reset_aws_terms" type="button" style="margin-top: 5px; font-size: 12px; cursor: pointer;">デフォルトのAWS用語を読み込む</button>
   </div>
   <button id="save">設定を保存</button>
   <span id="status" style="color: green; margin-left: 10px;"></span>

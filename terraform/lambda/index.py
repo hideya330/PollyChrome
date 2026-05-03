@@ -48,10 +48,31 @@ def lambda_handler(event, context):
                     # フロントエンドから送られたストップワードを解析
                     stop_words = set(re.findall(r'\b[a-zA-Z]+\b', custom_stop_words_str.lower()))
                 words = re.findall(r'\b[a-zA-Z]{2,}\b', text) # 2文字以上の英単語を抽出
+                
+                # 活用形を考慮してストップワードか判定するヘルパー関数
+                def is_stop_word(w):
+                    if w in stop_words: return True
+                    if len(w) <= 3: return False # 短すぎる単語（bedなど）は活用形とみなさない
+                    
+                    bases = []
+                    # -s, -es, -ies の処理 (ただし ss で終わる business などは除外)
+                    if w.endswith('ies'): bases.extend([w[:-3] + 'y', w[:-2]])
+                    elif w.endswith('es'): bases.extend([w[:-1], w[:-2]])
+                    elif w.endswith('s') and not w.endswith('ss'): bases.append(w[:-1])
+                    
+                    # -ed, -ied の処理 (重なった子音 stopped -> stop も考慮)
+                    if w.endswith('ied'): bases.append(w[:-3] + 'y')
+                    elif w.endswith('ed'): bases.extend([w[:-1], w[:-2], w[:-3] if len(w) >= 4 and w[-3] == w[-4] else ''])
+                    
+                    # -ing の処理 (making -> make, running -> run)
+                    if w.endswith('ing'): bases.extend([w[:-3], w[:-3] + 'e', w[:-4] if len(w) >= 5 and w[-4] == w[-5] else ''])
+                    
+                    return any(b in stop_words for b in bases if b)
+
                 unique_words = []
                 for w in words:
                     wl = w.lower()
-                    if wl not in unique_words and wl not in stop_words:
+                    if wl not in unique_words and not is_stop_word(wl):
                         unique_words.append(wl)
                         
                 # 長文の場合は、抽出した単語を最初の20個までに制限

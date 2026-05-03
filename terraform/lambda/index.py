@@ -78,11 +78,12 @@ def lambda_handler(event, context):
                     
                     return any(b in stop_words for b in bases if b)
 
-                unique_words = []
+                # ストップワードを除外し、出現順を保持したまま単語をユニークにする
+                filtered_words = []
                 for w in words:
-                    wl = w.lower()
-                    if wl not in unique_words and not is_stop_word(wl):
-                        unique_words.append(wl)
+                    if not is_stop_word(w.lower()):
+                        filtered_words.append(w.lower())
+                unique_words = list(dict.fromkeys(filtered_words))
                         
                 # 長文の場合は、抽出した単語を最初の20個までに制限
                 unique_words = unique_words[:20]

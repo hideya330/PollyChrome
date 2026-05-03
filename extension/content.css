@@ -9,7 +9,7 @@
   display: flex;
   gap: 5px;
 }
-#pollychrome-floating-btn, #pollychrome-translate-btn {
+#pollychrome-floating-btn, #pollychrome-translate-btn, #pollychrome-settings-btn {
   background: #333;
   color: #fff;
   padding: 5px 10px;
@@ -24,19 +24,21 @@
 #pollychrome-floating-btn:hover { background: #555; }
 #pollychrome-translate-btn { background: #4CAF50; }
 #pollychrome-translate-btn:hover { background: #45a049; }
+#pollychrome-settings-btn { background: #007bff; }
+#pollychrome-settings-btn:hover { background: #0056b3; }
 
 #pollychrome-tooltip {
   display: none;
   background: #fff;
   color: #333;
-  padding: 8px;
+  padding: 16px;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 26px;
   font-family: sans-serif;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   width: 750px;
   max-width: 90vw;
-  max-height: 250px;
+  max-height: 500px;
   overflow-y: auto;
   word-wrap: break-word;
   text-align: left;

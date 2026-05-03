@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>PollyChrome 設定</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 400px; }
+    body { font-family: sans-serif; padding: 20px; width: 450px; min-height: 700px; }
     .setting { margin-bottom: 20px; }
     label { cursor: pointer; }
   </style>
@@ -16,7 +16,8 @@
   </div>
   <div class="setting">
     <label><input type="checkbox" id="enable_audio"> 音声を再生する</label><br>
-    <label style="display: inline-block; margin-top: 5px;"><input type="checkbox" id="enable_subtitle"> 翻訳字幕を表示する（日本語以外の場合）</label>
+    <label style="display: inline-block; margin-top: 5px;"><input type="checkbox" id="enable_subtitle"> 翻訳字幕を表示する（日本語以外の場合）</label><span style="font-size: 11px; color: #d9534f;"> (Translateコスト増)</span>
+    <label style="display: inline-block; margin-top: 5px;"><input type="checkbox" id="enable_highlight"> 読み上げ箇所をハイライト表示する</label><span style="font-size: 11px; color: #d9534f;"> (Pollyコスト2倍)</span>
   </div>
   <div class="setting">
     <label>日本語の音声タイプ: </label><br>
@@ -47,6 +48,10 @@
   <div class="setting">
     <label>読み上げ速度: <span id="speed_value">1.0</span>x</label><br>
     <input type="range" id="speech_rate" min="0.5" max="2.0" step="0.1" value="1.0" style="width: 100%;">
+  </div>
+  <div class="setting">
+    <label>ドル/円 (コスト計算用為替レート):</label><br>
+    <input type="number" id="usd_rate" step="0.1" value="150" style="width: 100px; padding: 3px;"> 円/USD
   </div>
   <div class="setting" style="font-size: 14px;">
     <a href="#" id="open_shortcuts" style="color: #0056b3; text-decoration: none;">⌨️ ショートカットキーを設定・変更する</a>

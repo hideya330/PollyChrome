@@ -32,6 +32,10 @@ function createButton() {
   btnTranslate.id = 'pollychrome-translate-btn';
   btnTranslate.textContent = '📖 辞書/翻訳';
 
+  const btnSettings = document.createElement('div');
+  btnSettings.id = 'pollychrome-settings-btn';
+  btnSettings.textContent = '⚙️ 設定';
+
   const tooltip = document.createElement('div');
   tooltip.id = 'pollychrome-tooltip';
 
@@ -63,6 +67,8 @@ function createButton() {
           chrome.runtime.sendMessage({ action: "translate_text", text: text }, (response) => {
             if (chrome.runtime.lastError) {
               tooltip.textContent = 'エラーが発生しました';
+            } else if (response && response.error) {
+              tooltip.textContent = response.error;
             } else if (response && response.translated_text) {
               tooltip.textContent = ''; // 中身をクリア
               
@@ -77,10 +83,16 @@ function createButton() {
                 tooltip.appendChild(hr);
                 
                 const meaningsDiv = document.createElement('div');
-                meaningsDiv.style.cssText = 'font-size:11px; color:#555; white-space:pre-wrap;';
+                meaningsDiv.style.cssText = 'font-size:22px; color:#555; white-space:pre-wrap;';
                 meaningsDiv.textContent = response.word_meanings.join('\n');
                 tooltip.appendChild(meaningsDiv);
               }
+
+              const estimatedCost = response.estimated_cost ? response.estimated_cost.toFixed(3) : "0.000";
+              const costDiv = document.createElement('div');
+              costDiv.style.cssText = 'font-size:10px; color:#999; text-align:right; margin-top:5px;';
+              costDiv.textContent = `予想コスト: 約${estimatedCost}円`;
+              tooltip.appendChild(costDiv);
             } else {
               tooltip.textContent = '翻訳できませんでした';
             }
@@ -92,8 +104,24 @@ function createButton() {
     }
   });
 
+  btnSettings.addEventListener('mousedown', (e) => {
+    e.preventDefault(); // 選択解除を防止
+    if (isExtensionValid) {
+      try {
+        if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
+          chrome.runtime.sendMessage({ action: "open_options_page" });
+        }
+      } catch (err) {
+        isExtensionValid = false;
+        console.warn("PollyChrome: Extension updated. Please reload the page (F5) to use the extension.");
+      }
+    }
+    removeButton();
+  });
+
   btnGroup.appendChild(btnSpeak);
   btnGroup.appendChild(btnTranslate);
+  btnGroup.appendChild(btnSettings);
   container.appendChild(btnGroup);
   container.appendChild(tooltip);
 

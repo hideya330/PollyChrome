@@ -24,8 +24,16 @@ def lambda_handler(event, context):
         if not text or not text.strip():
             return _build_response(400, {'error': 'Text is missing or empty'})
             
+        if len(text) > 5000:
+            return _build_response(400, {'error': 'Text exceeds the 5000 characters limit'})
+
         logger.info(f"Text to synthesize: {text[:50]}...")
             
+        # コスト計算用のレートを取得（1ドルあたりの円）
+        usd_rate = float(body.get('usd_rate', 150.0))
+        polly_rate = 0.000004 * usd_rate
+        translate_rate = 0.000015 * usd_rate
+
         # 辞書・翻訳のみのモードかチェック
         translate_only = body.get('translate_only', False)
         if translate_only:
@@ -37,6 +45,7 @@ def lambda_handler(event, context):
                     TargetLanguageCode='ja'
                 )
                 translated_text = translate_response.get('TranslatedText')
+                translate_chars = len(text)
                 
                 # 英単語ごとの意味も取得する
                 word_meanings = []
@@ -79,8 +88,10 @@ def lambda_handler(event, context):
                 unique_words = unique_words[:20]
 
                 # 単語の意味をまとめて翻訳
+                words_text_len = 0
                 if len(unique_words) > 0:
                     words_text = "\n".join(unique_words)
+                    words_text_len = len(words_text)
                     words_response = translate_client.translate_text(
                         Text=words_text,
                         SourceLanguageCode='en',
@@ -91,7 +102,9 @@ def lambda_handler(event, context):
                         if i < len(words_translated):
                             word_meanings.append(f"{w}: {words_translated[i]}")
 
-                response_data = {'translated_text': translated_text}
+                estimated_cost = (translate_chars + words_text_len) * translate_rate
+
+                response_data = {'translated_text': translated_text, 'estimated_cost': estimated_cost}
                 if word_meanings:
                     response_data['word_meanings'] = word_meanings
 
@@ -110,9 +123,13 @@ def lambda_handler(event, context):
         
         logger.info(f"Selected Voice: {voice_id}")
 
-        # 英語など日本語以外の場合は AWS Translate で翻訳する
+        enable_subtitle = body.get('enable_subtitle', True)
+        enable_highlight = body.get('enable_highlight', True)
+
+        # 英語など日本語以外で、かつ字幕設定がオンの場合は AWS Translate で翻訳する
         translated_text = None
-        if not is_japanese:
+        translate_chars = 0
+        if not is_japanese and enable_subtitle:
             try:
                 translate_client = boto3.client('translate')
                 translate_response = translate_client.translate_text(
@@ -121,6 +138,7 @@ def lambda_handler(event, context):
                     TargetLanguageCode='ja'
                 )
                 translated_text = translate_response.get('TranslatedText')
+                translate_chars = len(text)
                 logger.info(f"Translated Text: {translated_text[:50]}...")
             except Exception as e:
                 logger.error(f"Translate Error: {str(e)}")
@@ -132,11 +150,31 @@ def lambda_handler(event, context):
             VoiceId=voice_id
         )
         
+        polly_chars = len(text)
+
+        # 読み上げ箇所をハイライトするための「スピーチマーク（単語ごとの時間データ）」を取得
+        speech_marks = []
+        if enable_highlight:
+            try:
+                marks_response = polly_client.synthesize_speech(
+                    Text=text,
+                    OutputFormat='json',
+                    SpeechMarkTypes=['word'],
+                    VoiceId=voice_id
+                )
+                marks_str = marks_response['AudioStream'].read().decode('utf-8')
+                speech_marks = [json.loads(line) for line in marks_str.split('\n') if line]
+                polly_chars += len(text) # スピーチマーク分もPollyの課金対象になるため文字数を追加
+            except Exception as e:
+                logger.warning(f"Speech Marks Error: {str(e)}")
+
+        estimated_cost = (polly_chars * polly_rate) + (translate_chars * translate_rate)
+
         # 音声ストリームの取得とBase64エンコード
         if 'AudioStream' in response:
             audio_stream = response['AudioStream'].read()
             audio_base64 = base64.b64encode(audio_stream).decode('utf-8')
-            res_body = {'audio': audio_base64}
+            res_body = {'audio': audio_base64, 'estimated_cost': estimated_cost, 'speech_marks': speech_marks}
             if translated_text:
                 res_body['translated_text'] = translated_text
             return _build_response(200, res_body)

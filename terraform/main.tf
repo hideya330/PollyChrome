@@ -169,6 +169,16 @@ resource "aws_api_gateway_usage_plan" "usage_plan" {
     api_id = aws_api_gateway_rest_api.api.id
     stage  = aws_api_gateway_stage.prod.stage_name
   }
+
+  throttle_settings {
+    burst_limit = var.api_burst_limit
+    rate_limit  = var.api_rate_limit
+  }
+
+  quota_settings {
+    limit  = var.api_quota_limit
+    period = "MONTH"
+  }
 }
 
 resource "aws_api_gateway_usage_plan_key" "usage_plan_key" {

@@ -37,6 +37,22 @@ resource "aws_iam_role_policy_attachment" "lambda_translate_access" {
   policy_arn = "arn:aws:iam::aws:policy/TranslateReadOnly"
 }
 
+# Amazon Rekognitionの読み取り専用権限（OCR用）
+resource "aws_iam_role_policy" "lambda_rekognition_access" {
+  name = "lambda_rekognition_access"
+  role = aws_iam_role.lambda_exec_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = ["rekognition:DetectText"]
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # ==========================================
 # Lambda Function
 # ==========================================

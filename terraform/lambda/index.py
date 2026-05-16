@@ -20,19 +20,61 @@ def lambda_handler(event, context):
         if isinstance(body, str):
             body = json.loads(body)
             
-        text = body.get('text')
-        if not text or not text.strip():
-            return _build_response(400, {'error': 'Text is missing or empty'})
-            
-        if len(text) > 5000:
-            return _build_response(400, {'error': 'Text exceeds the 5000 characters limit'})
-
-        logger.info(f"Text to synthesize: {text[:50]}...")
-            
         # コスト計算用のレートを取得（1ドルあたりの円）
         usd_rate = float(body.get('usd_rate', 150.0))
         polly_rate = 0.000004 * usd_rate
         translate_rate = 0.000015 * usd_rate
+        rekognition_rate = 0.001 * usd_rate
+
+        ocr_cost = 0.0
+        image_base64 = body.get('image_base64')
+        text = body.get('text', '')
+
+        if image_base64:
+            try:
+                # Base64ヘッダ（"data:image/png;base64,"など）が含まれている場合は除去
+                if ',' in image_base64:
+                    image_base64 = image_base64.split(',')[1]
+                    
+                rekognition_client = boto3.client('rekognition')
+                image_bytes = base64.b64decode(image_base64)
+                response = rekognition_client.detect_text(Image={'Bytes': image_bytes})
+                
+                detected_texts = []
+                for detection in response.get('TextDetections', []):
+                    if detection['Type'] == 'LINE':
+                        detected_texts.append(detection['DetectedText'].strip())
+                
+                # 行を結合して1つの自然なテキストにする
+                text = ""
+                for line in detected_texts:
+                    if not text:
+                        text = line
+                    else:
+                        # 英語の単語分割ハイフン（折り返し）対策
+                        if text.endswith('-') and re.match(r'^[a-z]', line):
+                            text = text[:-1] + line
+                        # 前の行の末尾か、次の行の先頭が全角文字（日本語など）の場合はスペースなしで結合
+                        elif re.search(r'[^\x01-\x7E]$', text) or re.search(r'^[^\x01-\x7E]', line):
+                            text += line
+                        # ピリオドで終わっている場合は改行で結合
+                        elif text.endswith('.'):
+                            text += "\n" + line
+                        else:
+                            text += " " + line
+                ocr_cost = rekognition_rate
+                logger.info(f"Extracted text from image: {text[:50]}...")
+            except Exception as e:
+                logger.error(f"OCR Error: {str(e)}")
+                return _build_response(500, {'error': 'Failed to extract text from image'})
+
+        if not text or not text.strip():
+            return _build_response(400, {'error': 'Text is missing or empty (or image contained no text)'})
+            
+        if len(text) > 5000:
+            return _build_response(400, {'error': 'Text exceeds the 5000 characters limit'})
+
+        logger.info(f"Text to process: {text[:50]}...")
 
         # 辞書・翻訳のみのモードかチェック
         translate_only = body.get('translate_only', False)
@@ -103,11 +145,20 @@ def lambda_handler(event, context):
                         if i < len(words_translated):
                             word_meanings.append(f"{w}: {words_translated[i]}")
 
-                estimated_cost = (translate_chars + words_text_len) * translate_rate
+                trans_cost = (translate_chars + words_text_len) * translate_rate
+                estimated_cost = trans_cost + ocr_cost
+                cost_breakdown = {
+                    'total': estimated_cost,
+                    'polly': 0.0,
+                    'translate': trans_cost,
+                    'rekognition': ocr_cost
+                }
 
-                response_data = {'translated_text': translated_text, 'estimated_cost': estimated_cost}
+                response_data = {'translated_text': translated_text, 'estimated_cost': estimated_cost, 'cost_breakdown': cost_breakdown}
                 if word_meanings:
                     response_data['word_meanings'] = word_meanings
+                if image_base64:
+                    response_data['extracted_text'] = text
 
                 return _build_response(200, response_data)
             except Exception as e:
@@ -169,13 +220,21 @@ def lambda_handler(event, context):
             except Exception as e:
                 logger.warning(f"Speech Marks Error: {str(e)}")
 
-        estimated_cost = (polly_chars * polly_rate) + (translate_chars * translate_rate)
+        polly_cost = polly_chars * polly_rate
+        trans_cost = translate_chars * translate_rate
+        estimated_cost = polly_cost + trans_cost + ocr_cost
+        cost_breakdown = {
+            'total': estimated_cost,
+            'polly': polly_cost,
+            'translate': trans_cost,
+            'rekognition': ocr_cost
+        }
 
         # 音声ストリームの取得とBase64エンコード
         if 'AudioStream' in response:
             audio_stream = response['AudioStream'].read()
             audio_base64 = base64.b64encode(audio_stream).decode('utf-8')
-            res_body = {'audio': audio_base64, 'estimated_cost': estimated_cost, 'speech_marks': speech_marks}
+            res_body = {'audio': audio_base64, 'estimated_cost': estimated_cost, 'cost_breakdown': cost_breakdown, 'speech_marks': speech_marks, 'extracted_text': text}
             if translated_text:
                 res_body['translated_text'] = translated_text
             return _build_response(200, res_body)
